@@ -1,60 +1,59 @@
 #include <stdio.h>
-#define MAX 100
+#include <limits.h>
+
+#define MAXV 100
 #define INF 99999
 
-int minDist(int dist[], int visited[], int n) {
-    int min = INF, index = -1;
-    for (int i = 0; i < n; i++)
-        if (!visited[i] && dist[i] < min)
-            min = dist[i], index = i;
-    return index;
-}
+// Edge structure
+struct Edge {
+    int src, dest, weight;
+};
 
-void printPath(int parent[], int j) {
-    if (parent[j] == -1) {
-        printf("%d ", j + 1);
-        return;
-    }
-    printPath(parent, parent[j]);
-    printf("%d ", j + 1);
-}
+// Bellman-Ford function
+void bellmanFord(struct Edge edges[], int V, int E, int source) {
+    int distance[MAXV];
+    int parent[MAXV];
 
-void dijkstra(int graph[MAX][MAX], int n, int start, int end) {
-    int dist[MAX], visited[MAX] = {0}, parent[MAX];
-    for (int i = 0; i < n; i++) {
-        dist[i] = INF;
+    // Step 1: Initialize distances
+    for (int i = 0; i < V; i++) {
+        distance[i] = INF;
         parent[i] = -1;
     }
-    dist[start] = 0;
+    distance[source] = 0;
 
-    for (int count = 0; count < n - 1; count++) {
-        int u = minDist(dist, visited, n);
-        if (u == -1) break;
-        visited[u] = 1;
-
-        for (int v = 0; v < n; v++) {
-            if (graph[u][v] && !visited[v] && dist[u] + graph[u][v] < dist[v]) {
-                dist[v] = dist[u] + graph[u][v];
+    // Step 2: Relax all edges V-1 times
+    for (int i = 1; i <= V - 1; i++) {
+        for (int j = 0; j < E; j++) {
+            int u = edges[j].src;
+            int v = edges[j].dest;
+            int w = edges[j].weight;
+            if (distance[u] != INF && distance[u] + w < distance[v]) {
+                distance[v] = distance[u] + w;
                 parent[v] = u;
             }
         }
     }
 
-    if (dist[end] == INF)
-        printf("no path\n");
-    else {
-        printPath(parent, end);
-        printf(": %d\n", dist[end]);
+    // Step 3: Check for negative-weight cycles
+    for (int j = 0; j < E; j++) {
+        int u = edges[j].src;
+        int v = edges[j].dest;
+        int w = edges[j].weight;
+        if (distance[u] != INF && distance[u] + w < distance[v]) {
+            printf("Graph contains a negative-weight cycle\n");
+            return;
+        }
     }
-}
 
-int main() {
-    int n, graph[MAX][MAX], src, dest;
-    scanf("%d", &n);
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-            scanf("%d", &graph[i][j]);
-    scanf("%d %d", &src, &dest);
-    dijkstra(graph, n, src - 1, dest - 1);
-    return 0;
+    // Print shortest path and distance
+    for (int i = 0; i < V; i++) {
+        printf("Distance from %d to %d is %d\n", source, i, distance[i]);
+        printf("Path: ");
+        int temp = i;
+        while (temp != -1) {
+            printf("%d ", temp);
+            temp = parent[temp];
+        }
+        printf("\n");
+    }
 }
